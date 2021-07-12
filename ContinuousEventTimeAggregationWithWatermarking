@@ -1,0 +1,34 @@
+
+# Anotações de teste
+
+### scala
+
+- SET PATH FOR WHERE TO GENERATE DATA
+
+```
+val path = "/tmp/structured-streaming-blog/sdevices/"
+dbutils.fs.mkdirs(path)
+
+val numFiles = 100
+val numDataPerFile = 100
+
+import scala.util.Random
+
+val deviceTypes = Seq("SensorTypeA", "SensorTypeB", "SensorTypeC", "SensorTypeD")
+val startTime = System.currentTimeMillis
+dbutils.fs.rm(path, true)
+
+(1 to numFiles).par.foreach { fileId =>
+  val file = s"$path/file-$fileId.json"
+  val data = (1 to numDataPerFile).map { x => 
+    val timestamp = new java.sql.Timestamp(startTime + (fileId * 60000) + (Random.nextInt() % 10000))
+    val deviceId = Random.nextInt(100)
+    val deviceType = deviceTypes(Random.nextInt(deviceTypes.size))
+    val signalStrength = math.abs(Random.nextDouble % 100)
+    s"""{"timestamp":"$timestamp","deviceId":$deviceId,"deviceType":"$deviceType","signalStrength":$signalStrength}"""
+  }.mkString("\n")
+  dbutils.fs.put(file, data)
+}
+dbutils.fs.head(dbutils.fs.ls(s"$path/file-1.json").head.path)
+
+```
